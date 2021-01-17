@@ -1,0 +1,1 @@
+curl --user bitcoin:gyqtxm7oELcqAlO3XBVtoghcSNXgVLCCGHKDL6wstOE --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblock", "params": ["00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"] }' -H 'content-type: text/plain;' http://176.126.167.107:8332/

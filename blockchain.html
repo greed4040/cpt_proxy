@@ -1,0 +1,176 @@
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 4px;
+        }
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+        button.ec_hidden {
+            background-color: rgb(204, 202, 219);
+            visibility: hidden;
+        }
+        button.ec_visible {
+            background-color: rgb(205, 221, 209);
+            visibility: visible;
+        }
+        div.request{
+            width: 90%;
+            background-color: rgb(153, 153, 153);
+            overflow-wrap: break-word;
+            margin:10;
+            padding:10;
+        }
+        div.response{
+            width: 90%;
+            background-color: rgb(212, 212, 212);
+            overflow-wrap: break-word;
+            margin:10;
+            padding:10;
+        }
+        input.wide{
+            width: 90%;
+        }
+    </style>
+
+    <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>		
+    <script type='text/javascript'>
+        var server_url="https://vmi355260.contaboserver.net:9292/";
+        function request_test2(){
+            Url=server_url+"btc_get_smth";
+            
+            $.ajax({
+                url: Url,
+                type: "POST",
+                data: {"command":"aaa cmd","params":"bbb pars"},
+                dataType: "JSON",
+                success: function(result) { console.log("test post response:", result); },
+                error: function(error){ console.log(error); }
+                });
+        }
+        function request_test1(){
+            Url=server_url+"btc_get_smth";
+            var xhr = new XMLHttpRequest();
+
+            xhr.open("POST", Url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+            
+            var ds={"command":"aaa","params":"bbb"};
+            //xhr.send(JSON.stringify(ds));
+            xhr.send(ds);
+                
+            xhr.onloadend = function() {
+                if (xhr.status == 200) {
+                    console.log("Успех");
+                } else {
+                    console.log("Ошибка " + this.status);
+                }
+            }
+
+            xhr.onload = function() {
+                console.log("local done");
+                var data = JSON.parse(this.responseText);
+                console.log("response data:", data);
+            }
+        }
+        function request_test3(){
+            var xhr = new XMLHttpRequest();   // new HttpRequest instance 
+            xhr.open("POST", server_url+"btc_get2");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            ds=JSON.stringify({command:"John Rambo", params:"2pm"});
+            console.log("request4", ds);
+            xhr.send(ds);
+            
+            xhr.onload = function() {
+                console.log("request4 local done");
+                var data = JSON.parse(this.responseText);
+                console.log("request4 response data:", data);
+            }
+        }
+        function request(){
+            var xhr = new XMLHttpRequest(); 
+            xhr.open("POST", server_url+"btc_get_data");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            ds=JSON.stringify({command:"get", params:"2pm"});
+            console.log("request3", ds);
+            xhr.send(ds);
+            
+            xhr.onload = function() {
+                console.log("request3 local done");
+                var data = JSON.parse(this.responseText);
+                document.getElementById("result").innerHTML=data;
+                console.log("request3 response data:", data);
+            }
+        }
+        function request_master(inp_data){
+            var xhr = new XMLHttpRequest(); 
+            xhr.addEventListener("error", function(){
+                document.getElementById("result").innerHTML="error:"+xhr.statusText+" "+xhr.status;
+                }, false);
+            xhr.open("POST", server_url+"btc_get_data");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            
+            ds=JSON.stringify(inp_data);
+            document.getElementById("query").innerHTML=ds;
+            xhr.send(ds);
+            
+            xhr.onload = function() {
+                console.log("request3 local done");
+                var data = JSON.parse(this.responseText);
+                document.getElementById("result").innerHTML=data;
+                console.log("request3 response data:", data);
+            }
+        }
+        
+        function request_getblockcount(){
+            ds={command:"getblockcount", params:""};
+            console.log("request", ds);
+            request_master(ds)
+        }
+        function request_getbestblockhash(){
+            ds={command:"getbestblockhash", params:""};
+            console.log("request", ds);
+            request_master(ds)
+        }
+        function request_getblockhash(){
+            vl=document.getElementById("request_getblockhash_vl").value;
+            ds={command:"getblockhash", params:[vl]};
+            console.log("request", ds);
+            request_master(ds)
+        }
+        function request_getblockheader(){
+            vl=document.getElementById("request_getblockheader_vl").value;
+            ds={command:"getblockheader", params:[vl]};
+            console.log("request", ds);
+            request_master(ds)
+        }
+        function request_getblock(){
+            vl=document.getElementById("request_getblock_vl").value;
+            ds={command:"getblock", params:[vl]};
+            console.log("request", ds);
+            request_master(ds)
+        }
+    
+    </script>
+    <body>
+        <h2>btc blochain requests example</h2>
+        <button onclick="request_getblockcount();">get block count</button><br>
+        <button onclick="request_getbestblockhash();">get best block hash</button><br>
+        <button onclick="request_getblockhash();">get block hash</button><input class="wide" id="request_getblockhash_vl" value="665439"><br>
+        <button onclick="request_getblockheader();">get block header</button><input class="wide" id="request_getblockheader_vl" value="000000000000000000002bbb98b5de33e8c9e3ae48718a40a8fa0f172da6068e"><br>
+        <button onclick="request_getblock();">get block</button><input class="wide" id="request_getblock_vl" value="000000000000000000002bbb98b5de33e8c9e3ae48718a40a8fa0f172da6068e"><br>
+        
+        <div id="query" class="request"></div>
+        <div id="result"  class="response"></div>
+    </body>
+</html>
+    
