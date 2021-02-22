@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/labstack/gommon/log"
 )
 
@@ -43,8 +46,8 @@ func master_req(inp_req req) string {
 	checkErr(reqErr)
 	defer resp.Body.Close()
 
-	fmt.Println(reflect.TypeOf(resp), resp.StatusCode)
-	fmt.Println(resp)
+	fmt.Println("##type of resp:", reflect.TypeOf(resp), "##status code:", resp.StatusCode)
+	fmt.Println("##resp:", resp)
 
 	var bodyString string
 	if resp.StatusCode == http.StatusOK {
@@ -55,6 +58,13 @@ func master_req(inp_req req) string {
 		bodyString = string(bodyBytes)
 		log.Info(bodyString)
 		fmt.Println(bodyString)
+	}
+	if resp.StatusCode == http.StatusInternalServerError {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		checkErr(err)
+		bodyString = string(bodyBytes)
+		log.Info(bodyString)
+		fmt.Println("##bodystring:", bodyString)
 	}
 	return bodyString
 }
@@ -207,12 +217,64 @@ func btc_get_test(rw http.ResponseWriter, req *http.Request) {
 type externalCmd struct {
 	Command string        `json:"command"`
 	Params  []interface{} `json:"params"`
+	Key     string        `json:"key"`
+	Tm      int           `json:"tm"`
 }
 
 func btc_get_blockCount(t externalCmd) string {
 	local_params := make([]interface{}, 0)
 	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
 	resp := master_req(req_data)
+	return resp
+}
+func btc_get_raw_mempool(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_list_unspent(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_create_rawtransaction(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_create_rawtransaction", t.Params)
+	fmt.Println("#btc_create_rawtransaction type:", reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("%", t.Params[a], reflect.TypeOf(t.Params[a]))
+		//if str, ok := t.Params[a].(string); ok {
+		local_params = append(local_params, t.Params[a])
+		//}
+	}
+
+	fmt.Println(local_params, reflect.TypeOf(local_params), len(local_params))
+	req_data := req{Json: "1.0", Id: "333", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+
+	//resp = "##btc_create_rawtransaction##"
+	return resp
+}
+func btc_sign_rawTransactionWithKey(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_create_rawtransaction", t.Params)
+	fmt.Println("#btc_create_rawtransaction type:", reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("%", t.Params[a], reflect.TypeOf(t.Params[a]))
+		//if str, ok := t.Params[a].(string); ok {
+		local_params = append(local_params, t.Params[a])
+		//}
+	}
+
+	fmt.Println(local_params, reflect.TypeOf(local_params), len(local_params))
+	req_data := req{Json: "1.0", Id: "333", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+
+	//resp = "##btc_create_rawtransaction##"
 	return resp
 }
 func btc_get_bestBlockHash(t externalCmd) string {
@@ -273,7 +335,80 @@ func btc_get_block(t externalCmd) string {
 	resp := master_req(req_data)
 	return resp
 }
-func btc_get_data(rw http.ResponseWriter, req *http.Request) {
+func btc_decode_rawTransaction(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_decode_rawTransaction", t.Params)
+	fmt.Println(reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("%", t.Params[a], reflect.TypeOf(t.Params[a]))
+		if str, ok := t.Params[a].(string); ok {
+			local_params = append(local_params, str)
+		}
+	}
+
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_get_txOut(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_get_txOut:", t.Params, len(t.Params), reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("##", t.Params[a], reflect.TypeOf(t.Params[a]))
+		switch v := t.Params[a].(type) {
+		default:
+			fmt.Printf("unexpected type %T", v)
+		case string:
+			local_params = append(local_params, t.Params[a])
+		case float64:
+			var aaa = fmt.Sprintf("%v", t.Params[a])
+			i, _ := strconv.Atoi(aaa)
+			local_params = append(local_params, i)
+		}
+	}
+
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_get_rawTransaction(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_get_rawTransaction", t.Params)
+	fmt.Println(reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("%", t.Params[a], reflect.TypeOf(t.Params[a]))
+		//if str, ok := t.Params[a].(string); ok {
+		//conv, err := strconv.Atoi(str)
+		//if err != nil {
+		//	log.Warn(err)
+		//}
+		//local_params = append(local_params, conv)
+		//}
+		local_params = append(local_params, fmt.Sprintf("%v", t.Params[a]))
+	}
+
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_send_rawTransaction(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println("#btc_send_rawTransaction", t.Params)
+	fmt.Println(reflect.TypeOf(t.Params))
+
+	for a := range t.Params {
+		fmt.Println("%", t.Params[a], reflect.TypeOf(t.Params[a]))
+		local_params = append(local_params, fmt.Sprintf("%v", t.Params[a]))
+	}
+
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_get_data3(rw http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		fmt.Println("#btc_get_data ioutil.ReadAll error")
@@ -329,12 +464,198 @@ func btc_get_data(rw http.ResponseWriter, req *http.Request) {
 	rw.Write(js)
 }
 
+func btc_get_data2(rw http.ResponseWriter, req *http.Request) {
+	fmt.Println("------------------------------------------")
+	fmt.Println("------------processing request------------")
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		fmt.Println("#btc_get_data ioutil.ReadAll error")
+		log.Error(err)
+	}
+	//log.Info("#btc_get2", string(body))
+	fmt.Printf("#btc_get_data recieved_body: %s", body)
+
+	var t externalCmd
+	err = json.Unmarshal(body, &t)
+	if err != nil {
+		fmt.Println("#btc_get_data Unmarshal error")
+		log.Error(err)
+	}
+	//log.Info(t)
+	fmt.Println("#btc_get_data result", "cmd:", t.Command, "params:", t.Params)
+
+	var resp string // := basic_test()
+	switch t.Command {
+	case "getrawmempool":
+		{
+			resp = "this is answer from go server:getrawmempool"
+		}
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	rw.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+	rw.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
+
+	js, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Write(js)
+	fmt.Println("----------processing request done---------")
+	fmt.Println("------------------------------------------")
+
+}
+
+func randSt(ln int) string {
+	var output strings.Builder
+	var charSet = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+	for i := 0; i < ln; i++ {
+		random := rand.Intn(len(charSet))
+		randomChar := charSet[random]
+		output.WriteRune(randomChar)
+	}
+	return output.String()
+}
+
+func btc_get_data(rw http.ResponseWriter, req *http.Request) {
+	t := time.Now()
+	rnds := randSt(5)
+	fmt.Println("begin", t.Format("2006/01/02 15:04:05.1234"), rnds, reflect.TypeOf(rnds))
+
+	body, _ := ioutil.ReadAll(req.Body)
+	fmt.Printf("#btc_get_data recieved_body: %s", body)
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	rw.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+	rw.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
+
+	var resp = "this is answer from go server:getrawmempool"
+
+	js, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Write(js)
+	fmt.Println("end", rnds)
+}
+
+func swich_calls(t externalCmd) string {
+	fmt.Println("#swich_calls:", t.Command)
+	var resp = ""
+	switch t.Command {
+	case "getblockcount":
+		{
+			resp = btc_get_blockCount(t)
+		}
+	case "getblockhash":
+		{
+			resp = btc_get_blockHash(t)
+		}
+	case "gettxout":
+		{
+			resp = btc_get_txOut(t)
+		}
+	case "getrawtransaction":
+		{
+			resp = btc_get_rawTransaction(t)
+		}
+	case "decoderawtransaction":
+		{
+			resp = btc_decode_rawTransaction(t)
+		}
+	case "getblock":
+		{
+			resp = btc_get_block(t)
+		}
+	case "getrawmempool":
+		{
+			resp = btc_get_raw_mempool(t)
+		}
+	case "listunspent":
+		{
+			resp = btc_list_unspent(t)
+		}
+	case "createrawtransaction":
+		{
+			resp = btc_create_rawtransaction(t)
+		}
+	case "signrawtransactionwithkey":
+		{
+			resp = btc_sign_rawTransactionWithKey(t)
+		}
+	case "sendrawtransaction":
+		{
+			resp = btc_send_rawTransaction(t)
+		}
+	default:
+		resp = "Command not supported"
+	}
+
+	return resp
+}
+func btc_getdt(rw http.ResponseWriter, req *http.Request) {
+	body, _ := ioutil.ReadAll(req.Body)
+	fmt.Printf("#btc_get_data recieved_body: %s\n", body)
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	rw.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+	rw.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
+
+	var t externalCmd
+	err := json.Unmarshal(body, &t)
+	if err != nil {
+		fmt.Println("#btc_get_data Unmarshal error")
+		log.Error(err)
+	}
+	//log.Info(t)
+	fmt.Println("#auth key:", t.Key)
+	opts := &redis.Options{Addr: "localhost:6379", Password: "", DB: 9}
+	client := redis.NewClient(opts)
+	a, err := client.HGetAll(t.Key).Result()
+	checkErr(err)
+	fmt.Println("redis result:", a, len(a))
+
+	answer_map := make(map[string]interface{})
+	js, _ := json.Marshal(answer_map)
+	if len(a) > 0 {
+		fmt.Println("#btc_get_data result", "cmd:", t.Command, "params:", t.Params)
+
+		var t2 externalCmd
+		t2.Params = t.Params
+		t2.Command = t.Command
+		var resp = swich_calls(t2)
+
+		fmt.Println("resp", reflect.TypeOf(resp))
+		js, err = json.Marshal(resp)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		answer_map := `{"result": "Unauthorized", "error": true, "id": "222"}`
+		fmt.Println("answer map:", reflect.TypeOf(answer_map), answer_map)
+		js, err = json.Marshal(answer_map)
+		fmt.Println("answer map:", reflect.TypeOf(js))
+	}
+	rw.Write(js)
+	/**/
+}
+
 func main() {
 	fmt.Println("Starting.")
 	fmt.Println("Server is listening...")
-	http.HandleFunc("/btc_get_test", btc_get_test)
-	http.HandleFunc("/btc_get_data", btc_get_data)
-
+	//http.HandleFunc("/btc_get_test", btc_get_test)
+	//http.HandleFunc("/btc_get_data", btc_get_data)
+	//http.HandleFunc("/btc_get_data2", btc_get_data2)
+	http.HandleFunc("/btc_getdata", btc_getdt)
 	err := http.ListenAndServeTLS(":9292", "fullchain.pem", "privkey.pem", nil)
 	if err != nil {
 		log.Fatal(err)
