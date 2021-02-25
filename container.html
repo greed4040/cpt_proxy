@@ -1,0 +1,379 @@
+<html>
+    <head>
+        <style>
+            body{
+                background-color: black;
+                color:  rgb(206, 206, 206);
+            }
+            div.data{
+                display:inline-block;
+                background-color: rgb(129, 129, 129);
+                width:45%;
+                padding: 5pt;
+                vertical-align:top;
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+            }
+            pre{
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+
+                white-space: pre-wrap;       /* css-3 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                /*word-wrap: break-word;   /**/
+            }
+            div.cmnt{
+                display:inline-block;
+                width: 60pt;
+            }
+            div.vals{
+                display:inline-block;
+                width: 100%;
+            }
+            div.cont{
+                width:100%;    
+            }
+            div.sector{
+                background-color: rgb(97, 97, 97);
+            }
+            input.key{
+                font-size:24px;
+                font-family: monospace;
+                background-color: rgb(200, 189, 221);
+            }
+            .auto_height { /* CSS */
+                width: 100%;
+            }
+        </style>
+        <script type='text/javascript'>
+            function auto_height(elem) {  /* javascript */
+                elem.style.height = "1px";
+                elem.style.height = (elem.scrollHeight)+"px";
+            }
+            const server_url="https://vmi355260.contaboserver.net:9292/";
+            function request_master(inp_data){
+                document.getElementById("request_data").innerHTML=JSON.stringify(inp_data);
+                inp_data['tm'] = Date.now();
+                inp_data['key']=document.getElementById("auth_key").value;
+                console.log("button pressed:", JSON.stringify(inp_data));
+
+                ds=JSON.stringify(inp_data);
+                var Url=server_url+"btc_getdata";
+
+                fetch(Url, { method: "POST", body: ds })
+                    .then(res => { 
+                        var data="";
+                        console.log("first type of res", typeof(res));
+                        try { data=res.json() } 
+                        catch { console.log(res, typeof(res)); data=res; }
+                        //console.log("first then");
+                        console.log("second type of res", typeof(data));
+                        
+                        return data
+                    })
+                    .then((out) => { 
+                        console.log("second then");
+                        //console.log("@@", out); 
+                        process_output(out); 
+                        console.log("second then after process_output");
+                    })
+                    .catch(err => { 
+                        console.log(err);
+                    });
+                /*
+                fetch(Url, { method: "POST", body: ds })
+                    .then(function (response){ 
+                        console.log("--------response---------"); 
+                        console.log(response); 
+                        document.getElementById("request_result_output_data").innerHTML+="response:" + response;
+                        console.log("--------response type---------"); 
+                        concole.log(typeof(response));
+                        concole.log(response.json());
+                        console.log("--------finished---------"); 
+                    })
+                    .then(function(data){ 
+                        console.log("--------data---------"); 
+                        console.log(data); 
+                        document.getElementById("request_result_output_data").innerHTML+="data:" + data;
+                    })
+                    .catch(function(err){ 
+                        document.getElementById("request_result_output_error").innerHTML+="err:" + err;
+                    });
+                /**/
+            }
+            function convert_to_float(a) { 
+                // Type conversion 
+                // of string to float 
+                var floatValue = +(a); 
+                    
+                // Return float value 
+                return floatValue;  
+            }  
+            function process_output(data){
+                var processed="";
+                try {
+                    console.log(JSON.stringify(data));
+
+                    processed=JSON.stringify(JSON.parse(data), null, 4);
+                    console.log(processed);
+                }
+                catch(err) {
+                    console.log("##------------##1");
+                    console.log(err);
+                    console.log("##------------##2");
+                    console.log(data);
+                    console.log("##------------##3");
+                    console.log("length of data:", typeof(data), data.length);
+                    processed=data
+                }
+                rslt="<pre>"+processed+"</pre>";
+                //rslt="<p>"+processed+"</p>";
+                
+                document.getElementById("request_result_output_data").innerHTML=rslt;
+            }
+            function request_getblockcount(){
+                ds={command:"getblockcount", params:""};
+                request_master(ds);
+            }
+            function request_get_newaddress(){
+                ds={command:"getnewaddress", params:[]};
+                request_master(ds);
+            }
+            function request_getgetrawmempool(){
+                ds={command:"getrawmempool", params:[]};
+                request_master(ds);
+            }
+            function request_listunspent(){
+                tx=document.getElementById("request_listunspent_tx").value;
+                ds={command:"listunspent", params:[0, 9999999, tx]};
+                request_master(ds);
+            }
+            function request_dumpprivkey(){
+                address=document.getElementById("request_dumpprivkey_address").value;
+                ds={command:"dumpprivkey", params:[address]};
+                request_master(ds);
+            }
+            
+            function request_getblockhash(){
+                vl=document.getElementById("request_getblockhash_vl").value;
+                ds={command:"getblockhash", params:[vl]};
+                request_master(ds)
+            }
+            function request_gettxout(){
+                vl=document.getElementById("request_gettxout_vl").value;
+                vlout_str=document.getElementById("request_gettxout_vlout").value;
+                var floor = Math.floor;
+                vlout=floor(vlout_str);
+                ds={command:"gettxout", params:[vl,vlout]};
+                request_master(ds)
+            }
+            function request_getrawtransaction(){
+                vl=document.getElementById("request_gettxout_vl").value;
+                ds={command:"getrawtransaction", params:[vl]};
+                request_master(ds)
+            }
+            
+            function request_decoderawtransaction(){
+                    vl=document.getElementById("request_decoderaw_tx").value;
+                    ds={command:"decoderawtransaction", params:[vl]};
+                    request_master(ds)
+                }
+
+            function request_getblock(){
+                    vl=document.getElementById("request_getblock_vl").value;
+                    ds={command:"getblock", params:[vl]};
+                    request_master(ds)
+                }
+            function request_createrawtransaction(){
+                //pl1='[{"txid":"17145e5994b570ec83a126ae1153edb515f02ab878f093189a3c53ef1058f28c", "vout":1}]';
+                //pl2='{"tb1qp3a7kn9kqspl5d5g4tf9a9rtcp5xu5kwc4hm5g": 0.00003, "tb1q098u3m7ygtad9zj4mq96d8lqzwsmj6jvd5ycas": 0.00078}';
+                
+                inptx=document.getElementById("request_rawtransaction_inpt0").value;
+                vout0=document.getElementById("request_rawtransaction_vout0").value;
+                dst=document.getElementById("request_rawtransaction_dst0").value;
+                vol=document.getElementById("request_rawtransaction_vol0").value;
+                chng=document.getElementById("request_rawtransaction_chng0").value;
+                chngvol=document.getElementById("request_rawtransaction_chngvol0").value;
+
+                pl1=[{"txid":inptx, "vout":convert_to_float(vout0)}];
+                dic1={};
+                dic1[dst]=convert_to_float(vol);
+                dic2={};
+                dic2[chng]=convert_to_float(chngvol);
+                pl2=[dic1,dic2];
+                
+                ds={command:"createrawtransaction", params:[pl1,pl2]};
+                //console.log(JSON.stringify(ds));
+                console.log("------------------");
+                
+                //pl1=[{"txid":"17145e5994b570ec83a126ae1153edb515f02ab878f093189a3c53ef1058f28c", "vout":1}];
+                //pl2=[{"tb1qp3a7kn9kqspl5d5g4tf9a9rtcp5xu5kwc4hm5g": 0.00003}, {"tb1q098u3m7ygtad9zj4mq96d8lqzwsmj6jvd5ycas": 0.00078}];
+                
+                //ds={command:"createrawtransaction", params:[pl1,pl2]};
+                //console.log(JSON.stringify(ds));
+                request_master(ds);
+            }
+            function request_sign_rawtransaction(){
+                //pl1='[{"txid":"17145e5994b570ec83a126ae1153edb515f02ab878f093189a3c53ef1058f28c", "vout":1}]';
+                //pl2='{"tb1qp3a7kn9kqspl5d5g4tf9a9rtcp5xu5kwc4hm5g": 0.00003, "tb1q098u3m7ygtad9zj4mq96d8lqzwsmj6jvd5ycas": 0.00078}';
+                
+                inp_tx=document.getElementById("request_signrawtransaction_rawtx").value;
+                pkey=document.getElementById("request_signrawtransaction_privkey").value;
+                
+                pl2=[inp_tx,[pkey]];
+                
+                ds={command:"signrawtransactionwithkey", params:[inp_tx,[pkey]]};
+                console.log("------------------");
+                request_master(ds);
+            }
+            function request_send_rawtransaction(){
+                rtx=document.getElementById("request_send_rawtransaction").value;
+                ds={command:"sendrawtransaction", params:[rtx]};
+                console.log("------------------");
+                request_master(ds); 
+            }
+        </script>
+    </head>
+    <body>        
+        <h3>btc blochain2 requests example</h3>
+        <!--<div valign="top">-->
+        <div class="data">
+            <div>access key</div>
+            <input class="key" id="auth_key" value='aaa123123123aaa'>
+            <br><br>
+
+            <button onclick="request_getblockcount();">get block count</button>
+            <br>
+            <button onclick="request_getgetrawmempool();">getgetrawmempool</button>
+            <br><br>
+
+            <div class="cont">
+                <div class="cmnt">block id:</div>
+                <div class="vals">
+                    <input class="wide" id="request_getblockhash_vl" value="665004">
+                </div>
+            </div>
+            <button onclick="request_getblockhash();">get block hash</button>
+            <br><br>
+            
+            <div class="cont">
+                <div class="cmnt">block hash:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_getblock_vl" oninput="auto_height(this)">00000000000be67c8771080c4541fc5ba6169e7d74bf76206bc76939360de56c</textarea>
+                </div>
+            </div>
+            <button onclick="request_getblock();">get block</button>
+            <br><br>
+            
+            <div class="cont">
+                <div class="cmnt">tx id:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_gettxout_vl" oninput="auto_height(this)">9940a6f52a47702e8b09057010274e7720acc3abe071de61c87ad72e231b639a</textarea>
+                </div>
+                <div class="cmnt">vout:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_gettxout_vlout" oninput="auto_height(this)">0</textarea>
+                </div>
+            </div>
+            <button onclick="request_gettxout();">get tx out</button><br>
+            <button onclick="request_getrawtransaction();">get raw transaction</button>
+            <br><br>
+
+            <div class="cont">
+                <div class="cmnt">address:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_listunspent_tx" oninput="auto_height(this)">2MuHXeLxE6gegesbmXGShQaNh88cgiQ1zDJ</textarea>
+                </div>
+            </div>
+            <button onclick="request_listunspent();">list unspent</button>
+            <br><br>
+            
+            <div class="cont">
+                <div class="cmnt">input tx:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_inpt0" oninput="auto_height(this)">17145e5994b570ec83a126ae1153edb515f02ab878f093189a3c53ef1058f28c</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">vout:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_vout0" oninput="auto_height(this)">0</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">reciever:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_dst0" oninput="auto_height(this)">tb1qp3a7kn9kqspl5d5g4tf9a9rtcp5xu5kwc4hm5g</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">amount:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_vol0" oninput="auto_height(this)" >0.00003</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">change:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_chng0" oninput="auto_height(this)">tb1q098u3m7ygtad9zj4mq96d8lqzwsmj6jvd5ycas</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">amount:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_rawtransaction_chngvol0" oninput="auto_height(this)">0.00078</textarea>
+                </div>
+            </div>
+            <button onclick="request_createrawtransaction();">create raw transaction</button><br><br>
+            
+            
+            <div class="cont">
+                <div class="cmnt">tx id:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_decoderaw_tx" oninput="auto_height(this)">02000000018cf25810ef533c9a1893f078b82af015b5ed5311ae26a183ec70b594595e14170000000000ffffffff02b80b0000000000001600140c7beb4cb60403fa3688aad25e946bc0686e52ceb030010000000000160014794fc8efc442fad28a55d80ba69fe013a1b96a4c00000000</textarea>
+                </div>
+            </div>
+            <button onclick="request_decoderawtransaction();">decode raw transaction</button><br><br>
+            
+            <div class="cont">
+                <div class="cmnt">rawtx:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_signrawtransaction_rawtx" oninput="auto_height(this)">02000000018cf25810ef533c9a1893f078b82af015b5ed5311ae26a183ec70b594595e14170100000000ffffffff02b80b0000000000001600140c7beb4cb60403fa3688aad25e946bc0686e52ceb030010000000000160014794fc8efc442fad28a55d80ba69fe013a1b96a4c00000000</textarea>
+                </div>
+            </div>
+            <div class="cont">
+                <div class="cmnt">privkey:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_signrawtransaction_privkey" oninput="auto_height(this)">cNzC5mgLC2jvHpw1qf48uadX6fy51bTyQmyCzE5ivS27kUvEPRpn</textarea>
+                </div>
+            </div>
+            <button onclick="request_sign_rawtransaction();">sign raw transaction</button><br><br>
+            
+            <div class="cont">
+                <div class="cmnt">signed raw transaction:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_send_rawtransaction">0200000000010191b650b53eef6d6ffe80fff2f8c334d3d458e595921ec8a6ca7bcc5dae8212ce0000000000ffffffff02b80b0000000000001600140c7beb4cb60403fa3688aad25e946bc0686e52ce084c010000000000160014794fc8efc442fad28a55d80ba69fe013a1b96a4c0247304402200eacf35967293da12a05eb5aee5e3dbb938ecc19159d1c590d3ce45c875274680220515a68b99b1f7a522c5e4725d78a002a98fed3c41dcc7dcb4bcbae825b5ec5980121024868e7c6221632db78adfac98d52b21f10815c93e13f776ce499758e91740e8500000000</textarea>
+                </div>
+            </div>
+            <button onclick="request_send_rawtransaction();">send raw transaction</button><br><br>
+            
+            <button onclick="request_get_newaddress();">get new address</button><br><br>
+            
+            <div class="cont">
+                <div class="cmnt">address:</div>
+                <div class="vals">
+                    <textarea class="auto_height" id="request_dumpprivkey_address" oninput="auto_height(this)">tb1qv6e46p6jf8dlqtld525zh8nzw7dsd20z3eukrw</textarea>
+                </div>
+            </div>
+            <button onclick="request_dumpprivkey();">dump private key</button><br><br>
+        </div>
+        <div class="data">
+            <div class="sector" id='request_data'></div>
+            <div class="sector" id='request_result_output_data'></div>
+            <div class="sector" id='request_result_output_error'></div>
+        </div>
+        <!--</div><!-- -->
+    </body>
+</html>
