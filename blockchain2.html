@@ -153,6 +153,10 @@
             ds={command:"getblockcount", params:""};
             request_master(ds);
         }
+    function request_get_newaddress(){
+        ds={command:"getnewaddress", params:[]};
+        request_master(ds);
+    }
     function request_getgetrawmempool(){
         ds={command:"getrawmempool", params:[]};
         request_master(ds);
@@ -162,6 +166,12 @@
         ds={command:"listunspent", params:[0, 9999999, tx]};
         request_master(ds);
     }
+    function request_dumpprivkey(){
+        address=document.getElementById("request_dumpprivkey_address").value;
+        ds={command:"dumpprivkey", params:[address]};
+        request_master(ds);
+    }
+    
     function request_getblockhash(){
         vl=document.getElementById("request_getblockhash_vl").value;
         ds={command:"getblockhash", params:[vl]};
@@ -310,6 +320,13 @@
         </div>
         <button onclick="request_send_rawtransaction();">send raw transaction</button><br><br>
         
+        <button onclick="request_get_newaddress();">get new address</button><br><br>
+        
+        <div class="cont">
+            <div class="cmnt">address:</div>
+            <div class="vals"><input class="wide" id="request_dumpprivkey_address" value='tb1qv6e46p6jf8dlqtld525zh8nzw7dsd20z3eukrw'></div>
+        </div>
+        <button onclick="request_dumpprivkey();">dump private key</button><br><br>
         <div id='request_data'></div>
         <div id='request_result_output_data'></div>
         <div id='request_result_output_error'></div>
