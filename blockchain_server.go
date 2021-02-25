@@ -227,6 +227,12 @@ func btc_get_blockCount(t externalCmd) string {
 	resp := master_req(req_data)
 	return resp
 }
+func btc_get_newAddress(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
 func btc_get_raw_mempool(t externalCmd) string {
 	local_params := make([]interface{}, 0)
 	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
@@ -235,6 +241,16 @@ func btc_get_raw_mempool(t externalCmd) string {
 }
 func btc_list_unspent(t externalCmd) string {
 	local_params := make([]interface{}, 0)
+	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
+	resp := master_req(req_data)
+	return resp
+}
+func btc_dumpprivkey(t externalCmd) string {
+	local_params := make([]interface{}, 0)
+	fmt.Println(reflect.TypeOf(local_params), len(local_params))
+	for a := range t.Params {
+		local_params = append(local_params, t.Params[a])
+	}
 	req_data := req{Json: "1.0", Id: "222", Method: t.Command, Params: local_params}
 	resp := master_req(req_data)
 	return resp
@@ -552,6 +568,14 @@ func swich_calls(t externalCmd) string {
 	case "getblockcount":
 		{
 			resp = btc_get_blockCount(t)
+		}
+	case "getnewaddress":
+		{
+			resp = btc_get_newAddress(t)
+		}
+	case "dumpprivkey":
+		{
+			resp = btc_dumpprivkey(t)
 		}
 	case "getblockhash":
 		{
